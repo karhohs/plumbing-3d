@@ -8,7 +8,7 @@ app = marimo.App(width="medium")
 def _():
     import marimo as mo
 
-    from plumbing_3d import (
+    from print_parts_catalog import (
         ElbowExtensionDimensions,
         build_elbow_extension,
         export_elbow_extension_stl,

@@ -1,0 +1,127 @@
+import tempfile
+import unittest
+from pathlib import Path
+
+from print_parts_catalog import (
+    WalletCardDimensions,
+    build_wallet_card,
+    export_wallet_card_stl,
+    starter_wallet_card_dimensions,
+)
+
+
+class WalletCardDimensionsTests(unittest.TestCase):
+    def test_starter_dimensions_are_usable(self) -> None:
+        dimensions = starter_wallet_card_dimensions()
+
+        self.assertEqual(dimensions.card_length_mm, 85.60)
+        self.assertEqual(dimensions.card_width_mm, 53.98)
+        self.assertEqual(dimensions.card_thickness_mm, 9.0)
+        self.assertEqual(dimensions.corner_radius_mm, 3.18)
+        self.assertAlmostEqual(dimensions.yubikey_pocket_effective_length_mm, 45.6, places=6)
+        self.assertAlmostEqual(dimensions.yubikey_pocket_effective_width_mm, 18.6, places=6)
+        self.assertAlmostEqual(dimensions.airtag_pocket_effective_diameter_mm, 32.5, places=6)
+
+    def test_starter_geometry_matches_expected_envelope(self) -> None:
+        dimensions = starter_wallet_card_dimensions()
+        shape = build_wallet_card(dimensions).val()
+        bounding_box = shape.BoundingBox()
+
+        self.assertAlmostEqual(bounding_box.xlen, dimensions.card_length_mm, places=6)
+        self.assertAlmostEqual(bounding_box.ylen, dimensions.card_width_mm, places=6)
+        self.assertAlmostEqual(bounding_box.zlen, dimensions.card_thickness_mm, places=6)
+
+    def test_export_writes_nonempty_stl(self) -> None:
+        dimensions = starter_wallet_card_dimensions()
+
+        with tempfile.TemporaryDirectory() as temp_dir:
+            output_path = Path(temp_dir) / "wallet_card.stl"
+            written_path = export_wallet_card_stl(dimensions, str(output_path))
+
+            resolved_path = Path(written_path)
+            self.assertTrue(resolved_path.exists())
+            self.assertGreater(resolved_path.stat().st_size, 0)
+
+    def test_pockets_that_do_not_fit_card_length_raise(self) -> None:
+        starter = starter_wallet_card_dimensions()
+        with self.assertRaises(ValueError):
+            WalletCardDimensions(
+                card_length_mm=starter.card_length_mm,
+                card_width_mm=starter.card_width_mm,
+                card_thickness_mm=starter.card_thickness_mm,
+                corner_radius_mm=starter.corner_radius_mm,
+                floor_thickness_mm=starter.floor_thickness_mm,
+                yubikey_pocket_length_mm=60.0,
+                yubikey_pocket_width_mm=starter.yubikey_pocket_width_mm,
+                yubikey_pocket_depth_mm=starter.yubikey_pocket_depth_mm,
+                yubikey_wall_clearance_mm=starter.yubikey_wall_clearance_mm,
+                airtag_pocket_diameter_mm=starter.airtag_pocket_diameter_mm,
+                airtag_pocket_depth_mm=starter.airtag_pocket_depth_mm,
+                airtag_wall_clearance_mm=starter.airtag_wall_clearance_mm,
+                pocket_edge_margin_mm=starter.pocket_edge_margin_mm,
+                pocket_spacing_mm=starter.pocket_spacing_mm,
+            )
+
+    def test_pocket_wider_than_card_raises(self) -> None:
+        starter = starter_wallet_card_dimensions()
+        with self.assertRaises(ValueError):
+            WalletCardDimensions(
+                card_length_mm=starter.card_length_mm,
+                card_width_mm=starter.card_width_mm,
+                card_thickness_mm=starter.card_thickness_mm,
+                corner_radius_mm=starter.corner_radius_mm,
+                floor_thickness_mm=starter.floor_thickness_mm,
+                yubikey_pocket_length_mm=starter.yubikey_pocket_length_mm,
+                yubikey_pocket_width_mm=60.0,
+                yubikey_pocket_depth_mm=starter.yubikey_pocket_depth_mm,
+                yubikey_wall_clearance_mm=starter.yubikey_wall_clearance_mm,
+                airtag_pocket_diameter_mm=starter.airtag_pocket_diameter_mm,
+                airtag_pocket_depth_mm=starter.airtag_pocket_depth_mm,
+                airtag_wall_clearance_mm=starter.airtag_wall_clearance_mm,
+                pocket_edge_margin_mm=starter.pocket_edge_margin_mm,
+                pocket_spacing_mm=starter.pocket_spacing_mm,
+            )
+
+    def test_thickness_too_thin_for_airtag_pocket_raises(self) -> None:
+        starter = starter_wallet_card_dimensions()
+        with self.assertRaises(ValueError):
+            WalletCardDimensions(
+                card_length_mm=starter.card_length_mm,
+                card_width_mm=starter.card_width_mm,
+                card_thickness_mm=5.0,
+                corner_radius_mm=starter.corner_radius_mm,
+                floor_thickness_mm=starter.floor_thickness_mm,
+                yubikey_pocket_length_mm=starter.yubikey_pocket_length_mm,
+                yubikey_pocket_width_mm=starter.yubikey_pocket_width_mm,
+                yubikey_pocket_depth_mm=starter.yubikey_pocket_depth_mm,
+                yubikey_wall_clearance_mm=starter.yubikey_wall_clearance_mm,
+                airtag_pocket_diameter_mm=starter.airtag_pocket_diameter_mm,
+                airtag_pocket_depth_mm=starter.airtag_pocket_depth_mm,
+                airtag_wall_clearance_mm=starter.airtag_wall_clearance_mm,
+                pocket_edge_margin_mm=starter.pocket_edge_margin_mm,
+                pocket_spacing_mm=starter.pocket_spacing_mm,
+            )
+
+    def test_corner_radius_too_large_raises(self) -> None:
+        starter = starter_wallet_card_dimensions()
+        with self.assertRaises(ValueError):
+            WalletCardDimensions(
+                card_length_mm=starter.card_length_mm,
+                card_width_mm=starter.card_width_mm,
+                card_thickness_mm=starter.card_thickness_mm,
+                corner_radius_mm=30.0,
+                floor_thickness_mm=starter.floor_thickness_mm,
+                yubikey_pocket_length_mm=starter.yubikey_pocket_length_mm,
+                yubikey_pocket_width_mm=starter.yubikey_pocket_width_mm,
+                yubikey_pocket_depth_mm=starter.yubikey_pocket_depth_mm,
+                yubikey_wall_clearance_mm=starter.yubikey_wall_clearance_mm,
+                airtag_pocket_diameter_mm=starter.airtag_pocket_diameter_mm,
+                airtag_pocket_depth_mm=starter.airtag_pocket_depth_mm,
+                airtag_wall_clearance_mm=starter.airtag_wall_clearance_mm,
+                pocket_edge_margin_mm=starter.pocket_edge_margin_mm,
+                pocket_spacing_mm=starter.pocket_spacing_mm,
+            )
+
+
+if __name__ == "__main__":
+    unittest.main()
