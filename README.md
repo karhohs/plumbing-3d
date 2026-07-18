@@ -1,18 +1,17 @@
-# plumbing-3d
+# print-parts-catalog
 
-Small plumbing projects can be solved quickly by combining simple parametric code with 3D printing.
+Small physical problems can often be solved quickly by combining simple parametric code with 3D printing.
 
-This repository uses Python + CadQuery + marimo so you can iterate dimensions in code, inspect geometry visually, and export printable STL files.
+This repository uses Python + CadQuery + marimo so you can iterate dimensions in code, inspect geometry visually, and export printable STL files. It's a catalog of unrelated parts — no shared theme beyond "parametric and 3D-printed."
 
-## Featured project
+## Parts
 
-The current focus is a garbage-disposal elbow extension:
-
-- [docs/elbow_extension/README.md](docs/elbow_extension/README.md)
+- [Elbow extension](docs/elbow_extension/README.md) — a printable insert for a garbage-disposal elbow
+- [Wallet card](docs/wallet_card/README.md) — a wallet-slot-sized card that holds a YubiKey 5C and an Apple AirTag
 
 ## Project layout
 
-- `src/plumbing_3d/`: package code for reusable plumbing part helpers and geometry builders
+- `src/print_parts_catalog/`: package code — one module per part, with reusable geometry-builder helpers
 - `notebooks/`: marimo apps for interactive modeling and STL export
 - `tests/`: unit tests for dimensions, geometry behavior, and export checks
 
@@ -25,9 +24,9 @@ uv run python -m unittest discover -s tests -v
 
 CadQuery is a normal package dependency. On this platform, its VTK stack currently supports Python 3.10 through 3.12, and the project metadata constrains `uv` to a compatible version automatically.
 
-## Launch the app
+## Launch a part's app
 
-From the repository root, launch the elbow extension app with:
+Each part has its own notebook at `notebooks/<part>_starter.py`. From the repository root, launch one with:
 
 ```bash
 uv sync

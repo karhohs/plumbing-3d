@@ -3,9 +3,9 @@ requires = ["setuptools>=78.1.1"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "plumbing-3d"
+name = "print-parts-catalog"
 version = "0.1.0"
-description = "Starter package and marimo app for creating plumbing parts with CadQuery"
+description = "Catalog of parametric 3D-printable parts built with CadQuery and marimo"
 readme = "README.md"
 requires-python = ">=3.10,<3.13"
 license = { file = "LICENSE" }

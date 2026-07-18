@@ -2,7 +2,7 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from plumbing_3d import (
+from print_parts_catalog import (
     ElbowExtensionDimensions,
     build_elbow_extension,
     export_elbow_extension_stl,

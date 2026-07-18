@@ -1,6 +1,6 @@
 # Elbow Extension for Garbage Disposal
 
-This document describes the elbow extension insert part defined in `src/plumbing_3d/elbow_extension.py`.
+This document describes the elbow extension insert part defined in `src/print_parts_catalog/elbow_extension.py`.
 
 ## Purpose
 
