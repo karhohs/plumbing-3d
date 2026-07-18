@@ -35,8 +35,8 @@ class WalletCardDimensionsTests(unittest.TestCase):
     def test_starter_dimensions_are_usable(self) -> None:
         dimensions = starter_wallet_card_dimensions()
 
-        self.assertEqual(dimensions.card_length_mm, 85.60)
-        self.assertEqual(dimensions.card_width_mm, 53.98)
+        self.assertEqual(dimensions.card_length_mm, 77.04)
+        self.assertEqual(dimensions.card_width_mm, 48.58)
         self.assertEqual(dimensions.card_thickness_mm, 3.6)
         self.assertEqual(dimensions.corner_radius_mm, 3.18)
         self.assertAlmostEqual(dimensions.airtag_pocket_effective_face_diameter_mm, 29.5, places=6)
@@ -65,12 +65,14 @@ class WalletCardDimensionsTests(unittest.TestCase):
             self.assertTrue(resolved_path.exists())
             self.assertGreater(resolved_path.stat().st_size, 0)
 
-    def test_pockets_that_do_not_fit_card_length_raise(self) -> None:
+    def test_yubikey_length_exceeding_card_width_raises(self) -> None:
+        # The key's long axis (with the shoe) runs along the card's width, not its length.
         starter = starter_wallet_card_dimensions()
         with self.assertRaises(ValueError):
             _replace(starter, yubikey_pocket_length_mm=60.0)
 
-    def test_pocket_wider_than_card_raises(self) -> None:
+    def test_yubikey_width_breaking_length_layout_raises(self) -> None:
+        # The key's short axis runs along the card's length, alongside the AirTag pocket.
         starter = starter_wallet_card_dimensions()
         with self.assertRaises(ValueError):
             _replace(starter, yubikey_pocket_width_mm=60.0)

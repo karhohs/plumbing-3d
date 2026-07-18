@@ -7,7 +7,13 @@ Design approach:
 - The AirTag cavity is a lofted ellipsoid-of-revolution (narrow at both faces, wide in the
   middle), matching the AirTag's own rounded edge profile.
 - The YubiKey cavity is a straight slot with one end left open (untapered) and the other end
-  carrying a small necked/bulged "shoe" that catches the key so it can't slide back out.
+  carrying a small necked/bulged "shoe" that catches the key so it can't slide back out. The
+  key's long axis (with the shoe) runs along the card's width, not its length: a standard-size
+  card is too thick for a typical wallet slot without flexing/squeezing, so the footprint is
+  scaled down to 90% of a standard ID/credit card. That shorter length can't fit both cavities
+  side-by-side if the key is oriented along the length (do the math: it needs ~84mm at minimum,
+  more than the 90%-scaled ~77mm length gives) — orienting it along the width instead is required
+  to fit, even though it's the structurally weaker orientation at that cross-section.
 - Starter dimensions are measured from a reference STL of a known, previously-printed design
   (not re-derived from raw hardware specs), so wall_clearance fields default to 0mm — the
   measured cavity sizes are already the target sizes, not raw item dimensions needing clearance
@@ -78,13 +84,16 @@ class WalletCardDimensions:
             raise ValueError("pocket_edge_margin_mm must be greater than or equal to zero")
         if self.pocket_spacing_mm < 0:
             raise ValueError("pocket_spacing_mm must be greater than or equal to zero")
-        if self.yubikey_pocket_effective_width_mm + (2 * self.pocket_edge_margin_mm) > self.card_width_mm:
-            raise ValueError("yubikey pocket width plus edge margins must not exceed card_width_mm")
+        if self.yubikey_pocket_effective_max_length_mm + (2 * self.pocket_edge_margin_mm) > self.card_width_mm:
+            raise ValueError(
+                "yubikey pocket max length (including the shoe) plus edge margins must not "
+                "exceed card_width_mm"
+            )
         if self.airtag_pocket_effective_max_diameter_mm + (2 * self.pocket_edge_margin_mm) > self.card_width_mm:
             raise ValueError("airtag pocket max diameter plus edge margins must not exceed card_width_mm")
         if self.pockets_occupied_length_mm + (2 * self.pocket_edge_margin_mm) > self.card_length_mm:
             raise ValueError(
-                "yubikey pocket max length, airtag pocket max diameter, and pocket spacing, plus "
+                "yubikey pocket width, airtag pocket max diameter, and pocket spacing, plus "
                 "edge margins on both sides, must not exceed card_length_mm"
             )
 
@@ -111,14 +120,14 @@ class WalletCardDimensions:
     @property
     def pockets_occupied_length_mm(self) -> float:
         return (
-            self.yubikey_pocket_effective_max_length_mm
+            self.yubikey_pocket_effective_width_mm
             + self.pocket_spacing_mm
             + self.airtag_pocket_effective_max_diameter_mm
         )
 
     @property
     def yubikey_pocket_center_x_mm(self) -> float:
-        return (-self.pockets_occupied_length_mm / 2) + (self.yubikey_pocket_effective_max_length_mm / 2)
+        return (-self.pockets_occupied_length_mm / 2) + (self.yubikey_pocket_effective_width_mm / 2)
 
     @property
     def airtag_pocket_center_x_mm(self) -> float:
@@ -127,8 +136,11 @@ class WalletCardDimensions:
 
 def starter_wallet_card_dimensions() -> WalletCardDimensions:
     return WalletCardDimensions(
-        card_length_mm=85.60,
-        card_width_mm=53.98,
+        # 90% of a standard ID/credit-card footprint (85.60 x 53.98mm) — a full-size card is too
+        # thick here (3.6mm vs ~0.76mm) to sit in a typical wallet slot without flexing/squeezing
+        # the slot open, so the footprint is scaled down to compensate.
+        card_length_mm=77.04,
+        card_width_mm=48.58,
         card_thickness_mm=3.6,
         corner_radius_mm=3.18,
         airtag_pocket_face_diameter_mm=29.5,
@@ -139,7 +151,9 @@ def starter_wallet_card_dimensions() -> WalletCardDimensions:
         yubikey_pocket_corner_radius_mm=1.5,
         yubikey_shoe_bulge_mm=2.6,
         yubikey_wall_clearance_mm=0.0,
-        pocket_edge_margin_mm=2.0,
+        # Trimmed from 2.0mm: at the 90%-scaled card_width_mm, the YubiKey's length (with its
+        # shoe) leaves only ~1.79mm of margin on each side to work with.
+        pocket_edge_margin_mm=1.7,
         pocket_spacing_mm=3.0,
     )
 
@@ -167,34 +181,36 @@ def _lofted_bulge_cylinder(cq, center_xy, face_radius: float, max_radius: float,
 
 
 def _yubikey_slot_cutter(cq, dimensions: WalletCardDimensions):
+    # The key's long axis (with the shoe) runs along Y (the card's width), not X (the card's
+    # length) — see the module docstring for why: a length-oriented key doesn't fit the
+    # 90%-scaled card footprint.
     center_x = dimensions.yubikey_pocket_center_x_mm
-    length = dimensions.yubikey_pocket_effective_length_mm
     width = dimensions.yubikey_pocket_effective_width_mm
+    length = dimensions.yubikey_pocket_effective_length_mm
     thickness = dimensions.card_thickness_mm
 
     slot = (
         cq.Workplane("XY")
         .center(center_x, 0)
-        .rect(length, width)
+        .rect(width, length)
         .extrude(thickness)
         .edges("|Z")
         .fillet(dimensions.yubikey_pocket_corner_radius_mm)
     )
 
-    # The shoe sits at the pocket's outer end (farther from the card center / AirTag pocket),
-    # necking the slot's length outward at mid-thickness to catch that end of the key.
-    outer_edge_x = center_x + math.copysign(length / 2, center_x)
+    # The shoe necks the slot's +Y end outward at mid-thickness, catching that end of the key.
+    outer_edge_y = length / 2
     overlap_mm = min(6.0, length / 2)
-    inner_edge_x = outer_edge_x - math.copysign(overlap_mm, center_x)
+    inner_edge_y = outer_edge_y - overlap_mm
 
-    shoe = cq.Workplane("XY").center(0, 0)
+    shoe = cq.Workplane("XY").center(center_x, 0)
     previous_z = 0.0
     previous_center = 0.0
     for z, bulge in _bulge_samples(0.0, dimensions.yubikey_shoe_bulge_mm, thickness):
-        bulged_edge_x = outer_edge_x + math.copysign(bulge, center_x)
-        segment_center = (inner_edge_x + bulged_edge_x) / 2
-        segment_length = abs(bulged_edge_x - inner_edge_x)
-        shoe = shoe.workplane(offset=z - previous_z).center(segment_center - previous_center, 0).rect(segment_length, width)
+        bulged_edge_y = outer_edge_y + bulge
+        segment_center = (inner_edge_y + bulged_edge_y) / 2
+        segment_length = bulged_edge_y - inner_edge_y
+        shoe = shoe.workplane(offset=z - previous_z).center(0, segment_center - previous_center).rect(width, segment_length)
         previous_z = z
         previous_center = segment_center
     shoe_cutter = shoe.loft(combine=True)

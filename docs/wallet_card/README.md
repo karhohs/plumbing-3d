@@ -6,8 +6,8 @@ This document describes the wallet card insert defined in `src/print_parts_catal
 
 The part is a printable card that:
 
-- Matches a standard ID/credit-card footprint (85.60 x 53.98 mm) so it slots into a wallet card
-  pocket alongside your other cards.
+- Uses 90% of a standard ID/credit-card footprint (77.04 x 48.58 mm) — see Design Rationale below
+  for why a full-size footprint doesn't work here.
 - Is thin (3.6 mm starter value) rather than a thick block — cavities are cut almost fully through
   it, and items are held by friction/flex against a necked cavity wall, not by resting in a floored
   recess.
@@ -36,9 +36,24 @@ The part is a printable card that:
   starter dimensions here are *measured cavity sizes* from a proven, already-printed reference file
   — they're already the target cavity size, not a raw item dimension that needs clearance added on
   top. Use `yubikey_wall_clearance_mm` / `airtag_wall_clearance_mm` to fine-tune fit from there.
-- **Side-by-side layout.** The YubiKey slot and AirTag cavity sit end-to-end along the card's long
-  axis, separated by `pocket_spacing_mm` and bounded by `pocket_edge_margin_mm` on all sides — same
-  layout convention as before.
+- **90%-scaled footprint, because of the card's own thickness.** A real ID card is ~0.76mm thick;
+  this one is 3.6mm. That's too thick to sit in a typical wallet card slot at full ID-1 length
+  without flexing/squeezing the slot open, so the footprint is scaled down to 90% of standard
+  (77.04 x 48.58mm) to compensate.
+- **YubiKey's long axis runs along the card's width, not its length.** At full ID-1 size, the
+  YubiKey (oriented along the length) and the AirTag fit side-by-side with room to spare, and that
+  orientation is structurally stronger — it leaves far more material at the critical cross-section
+  where the card is most likely to bow (confirmed by intersecting both orientations' built geometry
+  and measuring remaining material: ~36mm remaining vs. ~9mm when rotated 90°, with intermediate
+  angles falling monotonically between the two). But at the 90%-scaled footprint, a length-oriented
+  key doesn't fit at all — the two cavities need ~84mm of length at minimum, more than the
+  scaled-down ~77mm card provides even before any spacing or margin. Fitting the layout forces the
+  weaker, width-oriented layout (matching the reference model). `pocket_edge_margin_mm` is also
+  trimmed from 2.0mm to 1.7mm to make the width dimension work at this smaller footprint — tighter
+  than ideal, so watch this margin closely when test-fitting.
+- **Side-by-side layout otherwise unchanged.** The YubiKey slot and AirTag cavity still sit
+  end-to-end along the card's length axis, separated by `pocket_spacing_mm` and bounded by
+  `pocket_edge_margin_mm` on all sides — only the YubiKey's own internal orientation rotated.
 - **Print orientation and material.** Print with the card flat on the bed (thickness along Z), so
   the necking inside each cavity is a shallow internal overhang well within typical FDM tolerance
   and prints without supports. Prefer a print material with some flex (e.g. PETG) over a stiff one
@@ -59,16 +74,18 @@ first and test-fit both items before adjusting.
 
 ## Current baseline dimensions
 
-- Card length: 85.60 mm
-- Card width: 53.98 mm
+- Card length: 77.04 mm (90% of the ID-1 standard 85.60 mm)
+- Card width: 48.58 mm (90% of the ID-1 standard 53.98 mm)
 - Card thickness: 3.6 mm
 - Corner radius: 3.18 mm
 - AirTag cavity: 29.5 mm diameter at the faces → 31.7 mm at mid-thickness
 - AirTag wall clearance: 0.0 mm (fine-tune from here if needed)
-- YubiKey slot: 42.4 mm long (open end to shoe base) x 17.95 mm wide, corner radius 1.5 mm
+- YubiKey slot: 42.4 mm long (open end to shoe base) x 17.95 mm wide, corner radius 1.5 mm — long
+  axis runs along the card's width
 - YubiKey shoe bulge: 2.6 mm extra length at mid-thickness on the shoe end only
 - YubiKey wall clearance: 0.0 mm (fine-tune from here if needed)
-- Pocket edge margin: 2.0 mm
+- Pocket edge margin: 1.7 mm (trimmed from 2.0mm to fit the YubiKey's length within the
+  90%-scaled card width — tight; verify carefully when test-fitting)
 - Pocket spacing (between the two cavities): 3.0 mm
 
 The source defaults are defined by `starter_wallet_card_dimensions()`.

@@ -35,6 +35,11 @@ def _(mo):
     mid-thickness, gripping the item by friction/flex rather than resting it in a floored
     pocket. Starter dimensions are measured from a known, previously-printed reference
     design — verify against your actual hardware before printing a final version.
+
+    The card footprint defaults to 90% of a standard ID/credit card, since this card's
+    thickness would otherwise flex/squeeze a typical wallet slot. The YubiKey's long axis
+    (with its retention "shoe") runs along the card's *width*, not its length — that's
+    required for both cavities to fit side-by-side at this smaller footprint.
     """)
     return
 
