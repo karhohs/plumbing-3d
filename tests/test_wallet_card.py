@@ -10,17 +10,40 @@ from print_parts_catalog import (
 )
 
 
+def _replace(starter, **overrides):
+    fields = dict(
+        card_length_mm=starter.card_length_mm,
+        card_width_mm=starter.card_width_mm,
+        card_thickness_mm=starter.card_thickness_mm,
+        corner_radius_mm=starter.corner_radius_mm,
+        airtag_pocket_face_diameter_mm=starter.airtag_pocket_face_diameter_mm,
+        airtag_pocket_max_diameter_mm=starter.airtag_pocket_max_diameter_mm,
+        airtag_wall_clearance_mm=starter.airtag_wall_clearance_mm,
+        yubikey_pocket_length_mm=starter.yubikey_pocket_length_mm,
+        yubikey_pocket_width_mm=starter.yubikey_pocket_width_mm,
+        yubikey_pocket_corner_radius_mm=starter.yubikey_pocket_corner_radius_mm,
+        yubikey_shoe_bulge_mm=starter.yubikey_shoe_bulge_mm,
+        yubikey_wall_clearance_mm=starter.yubikey_wall_clearance_mm,
+        pocket_edge_margin_mm=starter.pocket_edge_margin_mm,
+        pocket_spacing_mm=starter.pocket_spacing_mm,
+    )
+    fields.update(overrides)
+    return WalletCardDimensions(**fields)
+
+
 class WalletCardDimensionsTests(unittest.TestCase):
     def test_starter_dimensions_are_usable(self) -> None:
         dimensions = starter_wallet_card_dimensions()
 
         self.assertEqual(dimensions.card_length_mm, 85.60)
         self.assertEqual(dimensions.card_width_mm, 53.98)
-        self.assertEqual(dimensions.card_thickness_mm, 9.0)
+        self.assertEqual(dimensions.card_thickness_mm, 3.6)
         self.assertEqual(dimensions.corner_radius_mm, 3.18)
-        self.assertAlmostEqual(dimensions.yubikey_pocket_effective_length_mm, 45.6, places=6)
-        self.assertAlmostEqual(dimensions.yubikey_pocket_effective_width_mm, 18.6, places=6)
-        self.assertAlmostEqual(dimensions.airtag_pocket_effective_diameter_mm, 32.5, places=6)
+        self.assertAlmostEqual(dimensions.airtag_pocket_effective_face_diameter_mm, 29.5, places=6)
+        self.assertAlmostEqual(dimensions.airtag_pocket_effective_max_diameter_mm, 31.7, places=6)
+        self.assertAlmostEqual(dimensions.yubikey_pocket_effective_length_mm, 42.4, places=6)
+        self.assertAlmostEqual(dimensions.yubikey_pocket_effective_width_mm, 17.95, places=6)
+        self.assertAlmostEqual(dimensions.yubikey_pocket_effective_max_length_mm, 45.0, places=6)
 
     def test_starter_geometry_matches_expected_envelope(self) -> None:
         dimensions = starter_wallet_card_dimensions()
@@ -45,82 +68,32 @@ class WalletCardDimensionsTests(unittest.TestCase):
     def test_pockets_that_do_not_fit_card_length_raise(self) -> None:
         starter = starter_wallet_card_dimensions()
         with self.assertRaises(ValueError):
-            WalletCardDimensions(
-                card_length_mm=starter.card_length_mm,
-                card_width_mm=starter.card_width_mm,
-                card_thickness_mm=starter.card_thickness_mm,
-                corner_radius_mm=starter.corner_radius_mm,
-                floor_thickness_mm=starter.floor_thickness_mm,
-                yubikey_pocket_length_mm=60.0,
-                yubikey_pocket_width_mm=starter.yubikey_pocket_width_mm,
-                yubikey_pocket_depth_mm=starter.yubikey_pocket_depth_mm,
-                yubikey_wall_clearance_mm=starter.yubikey_wall_clearance_mm,
-                airtag_pocket_diameter_mm=starter.airtag_pocket_diameter_mm,
-                airtag_pocket_depth_mm=starter.airtag_pocket_depth_mm,
-                airtag_wall_clearance_mm=starter.airtag_wall_clearance_mm,
-                pocket_edge_margin_mm=starter.pocket_edge_margin_mm,
-                pocket_spacing_mm=starter.pocket_spacing_mm,
-            )
+            _replace(starter, yubikey_pocket_length_mm=60.0)
 
     def test_pocket_wider_than_card_raises(self) -> None:
         starter = starter_wallet_card_dimensions()
         with self.assertRaises(ValueError):
-            WalletCardDimensions(
-                card_length_mm=starter.card_length_mm,
-                card_width_mm=starter.card_width_mm,
-                card_thickness_mm=starter.card_thickness_mm,
-                corner_radius_mm=starter.corner_radius_mm,
-                floor_thickness_mm=starter.floor_thickness_mm,
-                yubikey_pocket_length_mm=starter.yubikey_pocket_length_mm,
-                yubikey_pocket_width_mm=60.0,
-                yubikey_pocket_depth_mm=starter.yubikey_pocket_depth_mm,
-                yubikey_wall_clearance_mm=starter.yubikey_wall_clearance_mm,
-                airtag_pocket_diameter_mm=starter.airtag_pocket_diameter_mm,
-                airtag_pocket_depth_mm=starter.airtag_pocket_depth_mm,
-                airtag_wall_clearance_mm=starter.airtag_wall_clearance_mm,
-                pocket_edge_margin_mm=starter.pocket_edge_margin_mm,
-                pocket_spacing_mm=starter.pocket_spacing_mm,
-            )
+            _replace(starter, yubikey_pocket_width_mm=60.0)
 
-    def test_thickness_too_thin_for_airtag_pocket_raises(self) -> None:
+    def test_airtag_max_diameter_below_face_diameter_raises(self) -> None:
         starter = starter_wallet_card_dimensions()
         with self.assertRaises(ValueError):
-            WalletCardDimensions(
-                card_length_mm=starter.card_length_mm,
-                card_width_mm=starter.card_width_mm,
-                card_thickness_mm=5.0,
-                corner_radius_mm=starter.corner_radius_mm,
-                floor_thickness_mm=starter.floor_thickness_mm,
-                yubikey_pocket_length_mm=starter.yubikey_pocket_length_mm,
-                yubikey_pocket_width_mm=starter.yubikey_pocket_width_mm,
-                yubikey_pocket_depth_mm=starter.yubikey_pocket_depth_mm,
-                yubikey_wall_clearance_mm=starter.yubikey_wall_clearance_mm,
-                airtag_pocket_diameter_mm=starter.airtag_pocket_diameter_mm,
-                airtag_pocket_depth_mm=starter.airtag_pocket_depth_mm,
-                airtag_wall_clearance_mm=starter.airtag_wall_clearance_mm,
-                pocket_edge_margin_mm=starter.pocket_edge_margin_mm,
-                pocket_spacing_mm=starter.pocket_spacing_mm,
-            )
+            _replace(starter, airtag_pocket_max_diameter_mm=starter.airtag_pocket_face_diameter_mm - 1.0)
 
     def test_corner_radius_too_large_raises(self) -> None:
         starter = starter_wallet_card_dimensions()
         with self.assertRaises(ValueError):
-            WalletCardDimensions(
-                card_length_mm=starter.card_length_mm,
-                card_width_mm=starter.card_width_mm,
-                card_thickness_mm=starter.card_thickness_mm,
-                corner_radius_mm=30.0,
-                floor_thickness_mm=starter.floor_thickness_mm,
-                yubikey_pocket_length_mm=starter.yubikey_pocket_length_mm,
-                yubikey_pocket_width_mm=starter.yubikey_pocket_width_mm,
-                yubikey_pocket_depth_mm=starter.yubikey_pocket_depth_mm,
-                yubikey_wall_clearance_mm=starter.yubikey_wall_clearance_mm,
-                airtag_pocket_diameter_mm=starter.airtag_pocket_diameter_mm,
-                airtag_pocket_depth_mm=starter.airtag_pocket_depth_mm,
-                airtag_wall_clearance_mm=starter.airtag_wall_clearance_mm,
-                pocket_edge_margin_mm=starter.pocket_edge_margin_mm,
-                pocket_spacing_mm=starter.pocket_spacing_mm,
-            )
+            _replace(starter, corner_radius_mm=30.0)
+
+    def test_yubikey_pocket_corner_radius_too_large_raises(self) -> None:
+        starter = starter_wallet_card_dimensions()
+        with self.assertRaises(ValueError):
+            _replace(starter, yubikey_pocket_corner_radius_mm=20.0)
+
+    def test_negative_shoe_bulge_raises(self) -> None:
+        starter = starter_wallet_card_dimensions()
+        with self.assertRaises(ValueError):
+            _replace(starter, yubikey_shoe_bulge_mm=-1.0)
 
 
 if __name__ == "__main__":

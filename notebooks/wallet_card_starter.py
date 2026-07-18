@@ -30,8 +30,11 @@ def _(mo):
     # Wallet card creator
 
     Use this app to generate and visualize a wallet-slot-sized card that holds a
-    YubiKey 5C and an Apple AirTag. Starter pocket dimensions are based on published
-    specs — verify against your actual hardware with calipers before printing a final version.
+    YubiKey 5C and an Apple AirTag. This is a thin card with cavities cut almost fully
+    through it — each cavity necks in at the top/bottom faces and bulges out at
+    mid-thickness, gripping the item by friction/flex rather than resting it in a floored
+    pocket. Starter dimensions are measured from a known, previously-printed reference
+    design — verify against your actual hardware before printing a final version.
     """)
     return
 
@@ -66,36 +69,36 @@ def _(mo, starter_wallet_card_dimensions):
         stop=10.0,
         step=0.1,
         value=starter.corner_radius_mm,
-        label="Corner radius (mm)",
-    )
-    floor_thickness_mm = mo.ui.number(
-        start=0.5,
-        stop=4.0,
-        step=0.1,
-        value=starter.floor_thickness_mm,
-        label="Floor thickness under pockets (mm)",
+        label="Card corner radius (mm)",
     )
 
     yubikey_pocket_length_mm = mo.ui.number(
         start=20.0,
         stop=60.0,
-        step=0.5,
+        step=0.1,
         value=starter.yubikey_pocket_length_mm,
-        label="YubiKey pocket length (mm)",
+        label="YubiKey pocket length, open end to shoe base (mm)",
     )
     yubikey_pocket_width_mm = mo.ui.number(
         start=10.0,
         stop=30.0,
-        step=0.5,
+        step=0.1,
         value=starter.yubikey_pocket_width_mm,
         label="YubiKey pocket width (mm)",
     )
-    yubikey_pocket_depth_mm = mo.ui.number(
-        start=1.0,
-        stop=8.0,
+    yubikey_pocket_corner_radius_mm = mo.ui.number(
+        start=0.0,
+        stop=5.0,
         step=0.1,
-        value=starter.yubikey_pocket_depth_mm,
-        label="YubiKey pocket depth (mm)",
+        value=starter.yubikey_pocket_corner_radius_mm,
+        label="YubiKey pocket corner radius (mm)",
+    )
+    yubikey_shoe_bulge_mm = mo.ui.number(
+        start=0.0,
+        stop=6.0,
+        step=0.1,
+        value=starter.yubikey_shoe_bulge_mm,
+        label="YubiKey shoe bulge at mid-thickness (mm)",
     )
     yubikey_wall_clearance_mm = mo.ui.number(
         start=0.0,
@@ -105,19 +108,19 @@ def _(mo, starter_wallet_card_dimensions):
         label="YubiKey wall clearance (mm)",
     )
 
-    airtag_pocket_diameter_mm = mo.ui.number(
+    airtag_pocket_face_diameter_mm = mo.ui.number(
         start=20.0,
         stop=45.0,
         step=0.1,
-        value=starter.airtag_pocket_diameter_mm,
-        label="AirTag pocket diameter (mm)",
+        value=starter.airtag_pocket_face_diameter_mm,
+        label="AirTag pocket diameter at top/bottom faces (mm)",
     )
-    airtag_pocket_depth_mm = mo.ui.number(
-        start=1.0,
-        stop=10.0,
+    airtag_pocket_max_diameter_mm = mo.ui.number(
+        start=20.0,
+        stop=45.0,
         step=0.1,
-        value=starter.airtag_pocket_depth_mm,
-        label="AirTag pocket depth (mm)",
+        value=starter.airtag_pocket_max_diameter_mm,
+        label="AirTag pocket diameter at mid-thickness (mm)",
     )
     airtag_wall_clearance_mm = mo.ui.number(
         start=0.0,
@@ -157,13 +160,13 @@ def _(mo, starter_wallet_card_dimensions):
             card_width_mm,
             card_thickness_mm,
             corner_radius_mm,
-            floor_thickness_mm,
             yubikey_pocket_length_mm,
             yubikey_pocket_width_mm,
-            yubikey_pocket_depth_mm,
+            yubikey_pocket_corner_radius_mm,
+            yubikey_shoe_bulge_mm,
             yubikey_wall_clearance_mm,
-            airtag_pocket_diameter_mm,
-            airtag_pocket_depth_mm,
+            airtag_pocket_face_diameter_mm,
+            airtag_pocket_max_diameter_mm,
             airtag_wall_clearance_mm,
             pocket_edge_margin_mm,
             pocket_spacing_mm,
@@ -172,21 +175,21 @@ def _(mo, starter_wallet_card_dimensions):
         ]
     )
     return (
-        airtag_pocket_depth_mm,
-        airtag_pocket_diameter_mm,
+        airtag_pocket_face_diameter_mm,
+        airtag_pocket_max_diameter_mm,
         airtag_wall_clearance_mm,
         card_length_mm,
         card_thickness_mm,
         card_width_mm,
         corner_radius_mm,
         export_stl,
-        floor_thickness_mm,
         pocket_edge_margin_mm,
         pocket_spacing_mm,
         stl_output_path,
-        yubikey_pocket_depth_mm,
+        yubikey_pocket_corner_radius_mm,
         yubikey_pocket_length_mm,
         yubikey_pocket_width_mm,
+        yubikey_shoe_bulge_mm,
         yubikey_wall_clearance_mm,
     )
 
@@ -194,20 +197,20 @@ def _(mo, starter_wallet_card_dimensions):
 @app.cell
 def _(
     WalletCardDimensions,
-    airtag_pocket_depth_mm,
-    airtag_pocket_diameter_mm,
+    airtag_pocket_face_diameter_mm,
+    airtag_pocket_max_diameter_mm,
     airtag_wall_clearance_mm,
     card_length_mm,
     card_thickness_mm,
     card_width_mm,
     corner_radius_mm,
-    floor_thickness_mm,
     mo,
     pocket_edge_margin_mm,
     pocket_spacing_mm,
-    yubikey_pocket_depth_mm,
+    yubikey_pocket_corner_radius_mm,
     yubikey_pocket_length_mm,
     yubikey_pocket_width_mm,
+    yubikey_shoe_bulge_mm,
     yubikey_wall_clearance_mm,
 ):
     try:
@@ -216,14 +219,14 @@ def _(
             card_width_mm=card_width_mm.value,
             card_thickness_mm=card_thickness_mm.value,
             corner_radius_mm=corner_radius_mm.value,
-            floor_thickness_mm=floor_thickness_mm.value,
+            airtag_pocket_face_diameter_mm=airtag_pocket_face_diameter_mm.value,
+            airtag_pocket_max_diameter_mm=airtag_pocket_max_diameter_mm.value,
+            airtag_wall_clearance_mm=airtag_wall_clearance_mm.value,
             yubikey_pocket_length_mm=yubikey_pocket_length_mm.value,
             yubikey_pocket_width_mm=yubikey_pocket_width_mm.value,
-            yubikey_pocket_depth_mm=yubikey_pocket_depth_mm.value,
+            yubikey_pocket_corner_radius_mm=yubikey_pocket_corner_radius_mm.value,
+            yubikey_shoe_bulge_mm=yubikey_shoe_bulge_mm.value,
             yubikey_wall_clearance_mm=yubikey_wall_clearance_mm.value,
-            airtag_pocket_diameter_mm=airtag_pocket_diameter_mm.value,
-            airtag_pocket_depth_mm=airtag_pocket_depth_mm.value,
-            airtag_wall_clearance_mm=airtag_wall_clearance_mm.value,
             pocket_edge_margin_mm=pocket_edge_margin_mm.value,
             pocket_spacing_mm=pocket_spacing_mm.value,
         )
@@ -236,8 +239,11 @@ def _(
                 [
                     "## Current dimensions",
                     f"- Card: {dimensions.card_length_mm:.2f} x {dimensions.card_width_mm:.2f} x {dimensions.card_thickness_mm:.1f} mm",
-                    f"- YubiKey pocket: {dimensions.yubikey_pocket_effective_length_mm:.1f} x {dimensions.yubikey_pocket_effective_width_mm:.1f} x {dimensions.yubikey_pocket_depth_mm:.1f} mm",
-                    f"- AirTag pocket: {dimensions.airtag_pocket_effective_diameter_mm:.1f} mm diameter x {dimensions.airtag_pocket_depth_mm:.1f} mm deep",
+                    f"- YubiKey pocket: {dimensions.yubikey_pocket_effective_length_mm:.1f}"
+                    f"→{dimensions.yubikey_pocket_effective_max_length_mm:.1f} mm long (open end → shoe) "
+                    f"x {dimensions.yubikey_pocket_effective_width_mm:.1f} mm wide",
+                    f"- AirTag pocket: {dimensions.airtag_pocket_effective_face_diameter_mm:.1f}"
+                    f"→{dimensions.airtag_pocket_effective_max_diameter_mm:.1f} mm diameter (face → mid-thickness)",
                 ]
             )
         )
@@ -255,7 +261,8 @@ def _(build_wallet_card, dimensions, mo):
 
     card = build_wallet_card(dimensions)
     shape = card.val()
-    vertices, triangles = shape.tessellate(0.1)
+    # Finer tessellation than the default so the lofted (curved) cavity walls preview smoothly.
+    vertices, triangles = shape.tessellate(0.06)
 
     x = [vertex.x for vertex in vertices]
     y = [vertex.y for vertex in vertices]
