@@ -102,7 +102,7 @@ def starter_elbow_extension_dimensions() -> ElbowExtensionDimensions:
         insert_inner_diameter_mm=27.0,
         body_outer_diameter_mm=38.0,
         wall_thickness_mm=2.5,
-        insert_depth_mm=10.0,
+        insert_depth_mm=13.0,
         extension_length_mm=25.0,
         inner_transition_straight_length_mm=5.0,
         inner_transition_ramp_length_mm=5.0,
